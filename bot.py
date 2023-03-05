@@ -79,6 +79,8 @@ async def get_channel_posts():
             await client.send_code_request(PHONE_NUMBER)
             await message.answer('Введите код: ')
             await DelChannelSG.code.set()
+        else:
+            await start_monitoring()
     @dp.message_handler(state=AuthSG)
     async def get_code(message: types.Message, state: FSMContext):
         await state.update_data(code=message.text)
