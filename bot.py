@@ -77,15 +77,15 @@ async def get_channel_posts():
         await client.connect()
         if not await client.is_user_authorized():
             await client.send_code_request(PHONE_NUMBER)
-            await message.answer('Введите код: ')
+            await message.answer('Введите код(поставьте "-" пред последней цифрой): ')
             await AuthSG.code.set()
         else:
             await start_monitoring()
-    @dp.message_handler(state=AuthSG)
+    @dp.message_handler(state=AuthSG.code)
     async def get_code(message: types.Message, state: FSMContext):
         await state.update_data(code=message.text)
         data = await state.get_data()
-        code = data['code']
+        code = data['code'].replace('-', '')
         try:
             await client.sign_in(PHONE_NUMBER, code)
             await state.finish()
@@ -93,7 +93,7 @@ async def get_channel_posts():
         except SessionPasswordNeededError:
             await message.answer('Введите пароль: ')
             await AuthSG.password.set()
-    @dp.message_handler(state=AuthSG)
+    @dp.message_handler(state=AuthSG.password)
     async def get_password(message: types.Message, state: FSMContext):
         await state.update_data(password=message.text)   
         data = await state.get_data()
