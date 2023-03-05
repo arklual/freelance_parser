@@ -16,6 +16,7 @@ client = TelegramClient(PHONE_NUMBER, API_ID, API_HASH)
 bot = aiogram.Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = aiogram.Dispatcher(bot, storage=storage)
+client.start()
 
 class ChannelSG(StatesGroup):
     name = State()
@@ -71,6 +72,7 @@ async def get_channel_posts():
     @dp.message_handler(commands=['start_polling'])
     async def start_polling(message: types.Message, state: FSMContext):
         async with client:
+            await client.get_me()
             db = await Database.setup()
             channels = await db.get_channel_list()
             channel_entities = []
