@@ -115,16 +115,19 @@ async def get_channel_posts():
         await client.start()
         @client.on(events.NewMessage(chats=channel_entities))
         async def handle_channel_post(event):
+            print('handle')
             nonlocal old_files, media, is_creating
             if channels == []: return
             if str(event.message.message) != '': return
             if is_creating: 
+                print('is creating if')
                 await client.download_media(event.message)
                 files = os.listdir(directory)
                 for file in files:
                     if file not in old_files:
                         media.append(os.path.join(directory, file))
                 old_files = os.listdir(directory)
+                print(directory)
                 return
                 
             is_creating = True
@@ -151,6 +154,7 @@ async def get_channel_posts():
                 if file not in old_files:
                     media.append(os.path.join(directory, file))
             old_files = os.listdir(directory)
+            print('media:', media)
             if media == []: return
             vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
             vk.auth()
