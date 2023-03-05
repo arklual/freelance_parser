@@ -17,6 +17,10 @@ bot = aiogram.Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = aiogram.Dispatcher(bot, storage=storage)
 
+class AuthSG(StatesGroup):
+    code = State()
+    password = State()
+
 class ChannelSG(StatesGroup):
     name = State()
     description = State()
@@ -73,12 +77,29 @@ async def get_channel_posts():
         await client.connect()
         if not await client.is_user_authorized():
             await client.send_code_request(PHONE_NUMBER)
-            code = input('Enter the code: ')
-            try:
-                await client.sign_in(PHONE_NUMBER, code)
-            except SessionPasswordNeededError:
-                password = input('Two-step verification enabled. Enter your password: ')
-                await client.sign_in(password=password)
+            await message.answer('Введите код: ')
+            await DelChannelSG.code.set()
+    @dp.message_handler(state=AuthSG)
+    async def get_code(message: types.Message, state: FSMContext):
+        await state.update_data(code=message.text)
+        data = await state.get_data()
+        code = data['code']
+        try:
+            await client.sign_in(PHONE_NUMBER, code)
+            await state.finish()
+            await start_monitoring()
+        except SessionPasswordNeededError:
+            await message.answer('Введите пароль: ')
+            await DelChannelSG.password.set()
+    @dp.message_handler(state=AuthSG)
+    async def get_password(message: types.Message, state: FSMContext):
+        await state.update_data(password=message.text)   
+        data = await state.get_data()
+        await state.finish()
+        password = data['password']
+        await client.sign_in(password=password)
+        await start_monitoring()
+    async def start_monitoring(): 
         db = await Database.setup()
         channels = await db.get_channel_list()
         channel_entities = []
