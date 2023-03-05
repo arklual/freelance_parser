@@ -16,7 +16,6 @@ client = TelegramClient(PHONE_NUMBER, API_ID, API_HASH)
 bot = aiogram.Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = aiogram.Dispatcher(bot, storage=storage)
-client.start()
 
 class ChannelSG(StatesGroup):
     name = State()
@@ -71,80 +70,87 @@ async def get_channel_posts():
         await state.finish()
     @dp.message_handler(commands=['start_polling'])
     async def start_polling(message: types.Message, state: FSMContext):
-        async with client:
-            await client.get_me()
-            db = await Database.setup()
-            channels = await db.get_channel_list()
-            channel_entities = []
-            await db.close_connection()
-            for channel in channels:
-                channel_entity = await client.get_entity(channel['name'])
-                channel_entities.append(channel_entity)
-            old_files = os.listdir(directory)
-            media = []
-            is_creating = False
-            await client.start()
-            @client.on(events.NewMessage(chats=channel_entities))
-            async def handle_channel_post(event):
-                nonlocal old_files, media, is_creating
-                if channels == []: return
-                if str(event.message.message) != '': return
-                if is_creating: 
-                    await client.download_media(event.message)
-                    files = os.listdir(directory)
-                    for file in files:
-                        if file not in old_files:
-                            media.append(os.path.join(directory, file))
-                    old_files = os.listdir(directory)
-                    return
-                    
-                is_creating = True
-
-                t = 0
-                while t < TIMEOUT and str((await client.get_messages(event.chat))[-1].message) == '':
-                    await asyncio.sleep(5)
-                    t += 5
-                channel = event.chat.username
-                for chl in channels:
-                    if str(chl['name']) == str(channel):
-                        channel = chl
-                        break
-        
-                message_text = ''
-                text = str((await client.get_messages(event.chat))[-1].message)
-                if text != '':
-                    message_text = str(channel['description'])+'\n'+text+'\nПо заказам пишите '+str(channel['provider_phone'])
-                else:
-                    message_text = str(channel['description'])+'\nПо заказам пишите '+str(channel['provider_phone'])
+        await client.connect()
+        if not await client.is_user_authorized():
+            await client.send_code_request(PHONE_NUMBER)
+            code = input('Enter the code: ')
+            try:
+                await client.sign_in(PHONE_NUMBER, code)
+            except SessionPasswordNeededError:
+                password = input('Two-step verification enabled. Enter your password: ')
+                await client.sign_in(password=password)
+        db = await Database.setup()
+        channels = await db.get_channel_list()
+        channel_entities = []
+        await db.close_connection()
+        for channel in channels:
+            channel_entity = await client.get_entity(channel['name'])
+            channel_entities.append(channel_entity)
+        old_files = os.listdir(directory)
+        media = []
+        is_creating = False
+        await client.start()
+        @client.on(events.NewMessage(chats=channel_entities))
+        async def handle_channel_post(event):
+            nonlocal old_files, media, is_creating
+            if channels == []: return
+            if str(event.message.message) != '': return
+            if is_creating: 
                 await client.download_media(event.message)
                 files = os.listdir(directory)
                 for file in files:
                     if file not in old_files:
                         media.append(os.path.join(directory, file))
                 old_files = os.listdir(directory)
-                if media == []: return
-                vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
-                vk.auth()
-                upload = vk_api.VkUpload(vk)
-                photo_list = []
-                for m in media:
-                    try:
-                        photo = upload.photo_wall(photos=m, group_id=GROUP_ID)
-                        photo_list.append(*photo)
-                    except:
-                        pass
-                attachment = ','.join('photo{owner_id}_{id}'.format(**item) for item in photo_list)
-                vk.method('wall.post', {
-                    'owner_id': '-'+GROUP_ID,
-                    'message': message_text,
-                    'attachments': attachment,
-                    'from_group': 1,
-                })
-                for m in media:
-                    os.remove(m)
-                old_files = os.listdir(directory)
-                media = []
-                is_creating = False
+                return
+                
+            is_creating = True
+
+            t = 0
+            while t < TIMEOUT and str((await client.get_messages(event.chat))[-1].message) == '':
+                await asyncio.sleep(5)
+                t += 5
+            channel = event.chat.username
+            for chl in channels:
+                if str(chl['name']) == str(channel):
+                    channel = chl
+                    break
+    
+            message_text = ''
+            text = str((await client.get_messages(event.chat))[-1].message)
+            if text != '':
+                message_text = str(channel['description'])+'\n'+text+'\nПо заказам пишите '+str(channel['provider_phone'])
+            else:
+                message_text = str(channel['description'])+'\nПо заказам пишите '+str(channel['provider_phone'])
+            await client.download_media(event.message)
+            files = os.listdir(directory)
+            for file in files:
+                if file not in old_files:
+                    media.append(os.path.join(directory, file))
+            old_files = os.listdir(directory)
+            if media == []: return
+            vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
+            vk.auth()
+            upload = vk_api.VkUpload(vk)
+            photo_list = []
+            for m in media:
+                try:
+                    photo = upload.photo_wall(photos=m, group_id=GROUP_ID)
+                    photo_list.append(*photo)
+                except:
+                    pass
+            attachment = ','.join('photo{owner_id}_{id}'.format(**item) for item in photo_list)
+            vk.method('wall.post', {
+                'owner_id': '-'+GROUP_ID,
+                'message': message_text,
+                'attachments': attachment,
+                'from_group': 1,
+            })
+            for m in media:
+                os.remove(m)
+            old_files = os.listdir(directory)
+            media = []
+            is_creating = False
     await dp.start_polling()
     
 asyncio.run(get_channel_posts())
