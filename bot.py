@@ -44,9 +44,9 @@ async def new_channel_post(client, message):
     message_text = ''
     text = (await get_last_message(message.chat.id)).text
     if text is not None:
-        message_text = str(channel['description'])+'\n'+text+'\nПо заказам пишите '+str(channel['provider_phone'])
+        message_text = str(channel['description'])+'\n'+text+'\nТелефон продавца: '+str(channel['provider_phone'])
     else:
-        message_text = str(channel['description'])+'\nПо заказам пишите '+str(channel['provider_phone'])
+        message_text = str(channel['description'])+'\nТелефон продавца: '+str(channel['provider_phone'])
     await app.download_media(message)
     files = os.listdir(directory)
     for file in files:
