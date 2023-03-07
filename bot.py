@@ -82,9 +82,7 @@ async def new_channel_post(client, message):
         media = []
         is_creating = False
     elif int(channel['type']) == 2:
-        print('A')
         if message.caption is None: return
-        print('B')
         message_text = str(channel['description'])+'\n'+message.caption+'\nТелефон продавца: '+str(channel['provider_phone'])
         messages = message.get_media_group()
         for message in messages:
@@ -93,9 +91,7 @@ async def new_channel_post(client, message):
         for file in files:
             if file not in old_files:
                 media.append(os.path.join(directory, file))
-        print('C')
         if media == []: return
-        print('D')
         vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
         vk.auth()
         upload = vk_api.VkUpload(vk)
