@@ -84,7 +84,7 @@ async def new_channel_post(client, message):
     elif int(channel['type']) == 2:
         if message.caption is None: return
         message_text = str(channel['description'])+'\n'+message.caption+'\nТелефон продавца: '+str(channel['provider_phone'])
-        messages = message.get_media_group()
+        messages = await message.get_media_group()
         for message in messages:
             await app.download_media(message)
         files = os.listdir(directory)
