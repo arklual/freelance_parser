@@ -20,13 +20,13 @@ app = Client("parser", api_id=API_ID, api_hash=API_HASH,
 
 @app.on_message(filters.chat(SOURCE_PUBLICS))
 async def new_channel_post(client, message):
+    global old_files, media, is_creating
     channel = message.chat.username
     for chl in publics:
         if str(chl['name']) == str(channel):
             channel = chl
             break
     if int(channel['type']) == 1:
-        global old_files, media, is_creating
         if message.text is not None: return
         if is_creating: 
             await app.download_media(message)
@@ -82,7 +82,6 @@ async def new_channel_post(client, message):
         media = []
         is_creating = False
     elif int(channel['type']) == 2:
-        global old_files, media
         if message.text is None: return
         message_text = str(channel['description'])+'\n'+message.text+'\nТелефон продавца: '+str(channel['provider_phone'])
         messages = message.get_media_group()
