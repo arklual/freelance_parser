@@ -83,9 +83,9 @@ async def new_channel_post(client, message):
         is_creating = False
     elif int(channel['type']) == 2:
         print('A')
-        if message.text is None: return
+        if message.caption is None: return
         print('B')
-        message_text = str(channel['description'])+'\n'+message.text+'\nТелефон продавца: '+str(channel['provider_phone'])
+        message_text = str(channel['description'])+'\n'+message.caption+'\nТелефон продавца: '+str(channel['provider_phone'])
         messages = message.get_media_group()
         for message in messages:
             await app.download_media(message)
