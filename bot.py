@@ -4,6 +4,7 @@ from database import Database
 import vk_api
 import os
 import asyncio
+import requests
 
 db = Database()
 directory = os.path.join(os.getcwd(), 'downloads')
@@ -109,6 +110,37 @@ async def new_channel_post(client, message):
             'attachments': attachment,
             'from_group': 1,
         })
+        for m in media:
+            m = m.replace('.temp', '')
+            try:
+                os.remove(m)
+            except:
+                pass
+        old_files = os.listdir(directory)
+        media = []
+    elif int(channel['type']) == 3:
+        if message.caption is None: return
+        message_text = str(channel['description'])+'\n'+message.caption+'\nТелефон продавца: '+str(channel['provider_phone'])
+        messages = await message.get_media_group()
+        for message in messages:
+            await app.download_media(message)
+        files = os.listdir(directory)
+        for file in files:
+            if file not in old_files:
+                media.append(os.path.join(directory, file))
+        if media == []: return
+        vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
+        vk.auth()
+        resp = vk.method('video.save', {
+            'name': message.caption,
+            'description': message_text,
+            'wallpost': 1,
+            'group_id': GROUP_ID
+        })
+        with open(media[0], 'rb') as f: 
+            resp = requests.post(resp['upload_url'], files={
+                'video_file': f,
+            })
         for m in media:
             m = m.replace('.temp', '')
             try:
