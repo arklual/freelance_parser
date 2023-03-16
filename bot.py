@@ -18,8 +18,16 @@ for public in publics:
  
 app = Client("parser", api_id=API_ID, api_hash=API_HASH,
              phone_number=PHONE_NUMBER)
-vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
-vk.auth()
+
+def captcha_handler(captcha):
+    key = input(f'Введите код капчи, ссылка на изображение капчи {captcha.get_url()}: \n').strip()
+    return captcha.try_again(key)
+
+try:
+    vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD, captcha_handler=captcha_handler)
+    vk.auth()
+except:
+    print('Captcha needed')
 
 @app.on_message(filters.chat(SOURCE_PUBLICS))
 async def new_channel_post(client, message):
