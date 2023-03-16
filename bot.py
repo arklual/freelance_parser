@@ -87,7 +87,7 @@ async def new_channel_post(client, message):
             })
         else:
             resp = vk.method('video.save', {
-            'name': channel['provider_name'],
+            'name': message_text,
             'description': message_text,
             'wallpost': 1,
             'group_id': GROUP_ID
@@ -140,7 +140,7 @@ async def new_channel_post(client, message):
             })
         else:
             resp = vk.method('video.save', {
-            'name': message.caption,
+            'name': message_text,
             'description': message_text,
             'wallpost': 1,
             'group_id': GROUP_ID
