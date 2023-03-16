@@ -64,7 +64,7 @@ async def new_channel_post(client, message):
         is_video = False
         for file in files:
             if file not in old_files:
-                if 'mp4' in file.split('.'):
+                if 'mp4' in file.lower().split('.') or 'mov' in file.lower().split('.') or 'avi' in file.lower().split('.'):
                     is_video = True                
                 media.append(os.path.join(directory, file))
         old_files = os.listdir(directory)
@@ -118,7 +118,7 @@ async def new_channel_post(client, message):
         is_video = False
         for file in files:
             if file not in old_files:
-                if 'mp4' in file.split('.'):
+                if 'mp4' in file.lower().split('.') or 'mov' in file.lower().split('.') or 'avi' in file.lower().split('.'):
                     is_video = True
                 media.append(os.path.join(directory, file))
         if media == []: return
