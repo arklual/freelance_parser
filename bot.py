@@ -51,28 +51,43 @@ async def new_channel_post(client, message):
             message_text = str(channel['description'])+'\nТелефон продавца: '+str(channel['provider_phone'])
         await app.download_media(message)
         files = os.listdir(directory)
+        is_video = False
         for file in files:
             if file not in old_files:
+                if 'mp4' in file.split('.'):
+                    is_video = True                
                 media.append(os.path.join(directory, file))
         old_files = os.listdir(directory)
         if media == []: return
         vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
         vk.auth()
-        upload = vk_api.VkUpload(vk)
-        photo_list = []
-        for m in media:
-            try:
-                photo = upload.photo_wall(photos=m, group_id=GROUP_ID)
-                photo_list.append(*photo)
-            except:
-                pass
-        attachment = ','.join('photo{owner_id}_{id}'.format(**item) for item in photo_list)
-        vk.method('wall.post', {
-            'owner_id': '-'+GROUP_ID,
-            'message': message_text,
-            'attachments': attachment,
-            'from_group': 1,
-        })
+        if not is_video:
+            upload = vk_api.VkUpload(vk)
+            photo_list = []
+            for m in media:
+                try:
+                    photo = upload.photo_wall(photos=m, group_id=GROUP_ID)
+                    photo_list.append(*photo)
+                except:
+                    pass
+            attachment = ','.join('photo{owner_id}_{id}'.format(**item) for item in photo_list)
+            vk.method('wall.post', {
+                'owner_id': '-'+GROUP_ID,
+                'message': message_text,
+                'attachments': attachment,
+                'from_group': 1,
+            })
+        else:
+            resp = vk.method('video.save', {
+            'name': channel['provider_name'],
+            'description': message_text,
+            'wallpost': 1,
+            'group_id': GROUP_ID
+            })
+            with open(media[0], 'rb') as f: 
+                resp = requests.post(resp['upload_url'], files={
+                    'video_file': f,
+                })
         for m in media:
             m = m.replace('.temp', '')
             try:
@@ -89,58 +104,42 @@ async def new_channel_post(client, message):
         for message in messages:
             await app.download_media(message)
         files = os.listdir(directory)
+        is_video = False
         for file in files:
             if file not in old_files:
+                if 'mp4' in file.split('.'):
+                    is_video = True
                 media.append(os.path.join(directory, file))
         if media == []: return
         vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
         vk.auth()
-        upload = vk_api.VkUpload(vk)
-        photo_list = []
-        for m in media:
-            try:
-                photo = upload.photo_wall(photos=m, group_id=GROUP_ID)
-                photo_list.append(*photo)
-            except:
-                pass
-        attachment = ','.join('photo{owner_id}_{id}'.format(**item) for item in photo_list)
-        vk.method('wall.post', {
-            'owner_id': '-'+GROUP_ID,
-            'message': message_text,
-            'attachments': attachment,
-            'from_group': 1,
-        })
-        for m in media:
-            m = m.replace('.temp', '')
-            try:
-                os.remove(m)
-            except:
-                pass
-        old_files = os.listdir(directory)
-        media = []
-    elif int(channel['type']) == 3:
-        if message.caption is None: return
-        message_text = str(channel['description'])+'\n'+message.caption+'\nТелефон продавца: '+str(channel['provider_phone'])
-        messages = await message.get_media_group()
-        for message in messages:
-            await app.download_media(message)
-        files = os.listdir(directory)
-        for file in files:
-            if file not in old_files:
-                media.append(os.path.join(directory, file))
-        if media == []: return
-        vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
-        vk.auth()
-        resp = vk.method('video.save', {
+        if not is_video:
+            upload = vk_api.VkUpload(vk)
+            photo_list = []
+            for m in media:
+                try:
+                    photo = upload.photo_wall(photos=m, group_id=GROUP_ID)
+                    photo_list.append(*photo)
+                except:
+                    pass
+            attachment = ','.join('photo{owner_id}_{id}'.format(**item) for item in photo_list)
+            vk.method('wall.post', {
+                'owner_id': '-'+GROUP_ID,
+                'message': message_text,
+                'attachments': attachment,
+                'from_group': 1,
+            })
+        else:
+            resp = vk.method('video.save', {
             'name': message.caption,
             'description': message_text,
             'wallpost': 1,
             'group_id': GROUP_ID
-        })
-        with open(media[0], 'rb') as f: 
-            resp = requests.post(resp['upload_url'], files={
-                'video_file': f,
             })
+            with open(media[0], 'rb') as f: 
+                resp = requests.post(resp['upload_url'], files={
+                    'video_file': f,
+                })
         for m in media:
             m = m.replace('.temp', '')
             try:
@@ -149,7 +148,6 @@ async def new_channel_post(client, message):
                 pass
         old_files = os.listdir(directory)
         media = []
-        
  
 @app.on_message(filters.chat(PRIVATE_PUBLIC))
 async def post_request(client, message):
