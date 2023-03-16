@@ -18,6 +18,8 @@ for public in publics:
  
 app = Client("parser", api_id=API_ID, api_hash=API_HASH,
              phone_number=PHONE_NUMBER)
+vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
+vk.auth()
 
 @app.on_message(filters.chat(SOURCE_PUBLICS))
 async def new_channel_post(client, message):
@@ -59,8 +61,6 @@ async def new_channel_post(client, message):
                 media.append(os.path.join(directory, file))
         old_files = os.listdir(directory)
         if media == []: return
-        vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
-        vk.auth()
         if not is_video:
             upload = vk_api.VkUpload(vk)
             photo_list = []
@@ -100,7 +100,10 @@ async def new_channel_post(client, message):
     elif int(channel['type']) == 2:
         if message.caption is None: return
         message_text = str(channel['description'])+'\n'+message.caption+'\nТелефон продавца: '+str(channel['provider_phone'])
-        messages = await message.get_media_group()
+        try:
+            messages = await message.get_media_group()
+        except:
+            messages = [message]
         for message in messages:
             await app.download_media(message)
         files = os.listdir(directory)
@@ -111,8 +114,6 @@ async def new_channel_post(client, message):
                     is_video = True
                 media.append(os.path.join(directory, file))
         if media == []: return
-        vk = vk_api.VkApi(VK_LOGIN, VK_PASSWORD)
-        vk.auth()
         if not is_video:
             upload = vk_api.VkUpload(vk)
             photo_list = []
