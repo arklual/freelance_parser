@@ -178,7 +178,12 @@ async def post_request(client, message):
         publics = db.get_channel_list()
         for public in publics:
             SOURCE_PUBLICS.append(public['name'])
- 
+    if '/clear' in message.text:
+        print('a')
+        dir = 'downloads'
+        for f in os.listdir(dir):
+            os.remove(os.path.join(dir, f))
+
 async def get_last_message(chat_id):
     async for message in app.get_chat_history(chat_id, limit=1, offset_id=-1):
         return message
